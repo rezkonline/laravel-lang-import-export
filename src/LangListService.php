@@ -55,7 +55,7 @@ class LangListService
 	private function getGroup($locale, $group)
 	{
 		$translations = Lang::getLoader()->load($locale, $group);
-		return array_dot($translations);
+		return array_filter(array_dot($translations));
 	}
 
 	/**
@@ -138,7 +138,7 @@ class LangListService
 		}
 
 		if(in_array($group, $this->dotFiles)) {
-			$translations = array_dot($translations);
+			$translations = array_filter(array_dot($translations));
 		}
 
 		return $translations;

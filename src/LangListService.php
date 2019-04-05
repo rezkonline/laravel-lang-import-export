@@ -5,23 +5,26 @@ namespace HighSolutions\LangImportExport;
 use Lang;
 use File;
 
-class LangListService 
+class LangListService
 {
 
 	protected $dotFiles = ['routes'];
 
 	/**
 	 * Load localization file or files for specified locale.
-	 * 
+	 *
 	 * @param string $locale
 	 * @param string $group
 	 * @return array
 	 */
-	public function loadLangList($locale, $group) 
+	public function loadLangList($locale, $group)
 	{
 		$result = [];
-		if($this->isOneGroup($group)) {
-			$result[$group] = $this->getGroup($locale, $group);
+		if($this->isGroupList($group)) {
+		    $groups = explode(',', $group);
+		    foreach ($groups as $group) {
+                $result[$group] = $this->getGroup($locale, $group);
+            }
 			return $result;
 		}
 
@@ -36,18 +39,18 @@ class LangListService
 
 	/**
 	 * Check if $group is one file only.
-	 * 
+	 *
 	 * @param string $group
 	 * @return bool
 	 */
-	private function isOneGroup($group)
+	private function isGroupList($group)
 	{
 		return $group != '*' && $group != '';
 	}
 
 	/**
 	 * Fetch localization from file.
-	 * 
+	 *
 	 * @param string $locale
 	 * @param string $group
 	 * @return array
@@ -60,39 +63,38 @@ class LangListService
 
 	/**
 	 * Get list of all files from $path.
-	 * 
+	 *
 	 * @param string $path
 	 * @return array
 	 */
-	private function getAllFiles($path) 
+	private function getAllFiles($path)
 	{
 		return File::allFiles($path);
 	}
 
 	/**
 	 * Write translated content to localization file or files.
-	 * 
+	 *
 	 * @param string $locale
 	 * @param string $group
 	 * @param array $new_translations
 	 * @return void
 	 */
-	public function writeLangList($locale, $group, $new_translations) 
+	public function writeLangList($locale, $group, $new_translations)
 	{
-		if($this->isOneGroup($group)) {
-			if(isset($new_translations[$group]) == false)
-				return;
-
-			return $this->writeLangFile($locale, $group, $new_translations[$group]);
+		if($this->isGroupList($group)) {
+            $groups = explode(',', $group);
+            $new_translations = array_intersect_key($new_translations, array_flip($groups));
 		}
 
-		foreach($new_translations as $group => $translations)
-			$this->writeLangFile($locale, $group, $translations);
+		foreach($new_translations as $group => $translations) {
+            $this->writeLangFile($locale, $group, $translations);
+        }
 	}
 
 	/**
 	 * Write translated content to one file.
-	 * 
+	 *
 	 * @param string $locale
 	 * @param string $group
 	 * @param array $new_translations
@@ -106,7 +108,7 @@ class LangListService
 		$header = "<?php\n\nreturn ";
 
 		$language_file = resource_path("lang/{$locale}/{$group}.php");
-		
+
 		if ( ! file_exists(dirname($language_file)))
         	{
 		    mkdir(dirname($language_file), 0777, true);
@@ -124,7 +126,7 @@ class LangListService
 
 	/**
 	 * Fetch existing translations and merge with new ones.
-	 * 
+	 *
 	 * @param string $locale
 	 * @param string $group
 	 * @param array $new_translations
@@ -132,7 +134,7 @@ class LangListService
 	 */
 	private function getTranslations($locale, $group, $new_translations)
 	{
-		$translations = Lang::getLoader()->load($locale, $group);		
+		$translations = Lang::getLoader()->load($locale, $group);
 		foreach($new_translations as $key => $value) {
 			array_set($translations, $key, $value);
 		}

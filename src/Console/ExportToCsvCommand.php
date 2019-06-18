@@ -18,7 +18,7 @@ class ExportToCsvCommand extends Command
     protected $signature = 'lang:export 
     						{locale? : The locale to be exported (default - default lang of application).} 
     						{group? : The name of translation file to export (default - all files).} 
-    						{output? : Filename of exported translation files (optional, default - storage/app/lang-import-export.csv).} 
+    						{output? : Filename of exported translation, :locale is replaced (optional, default - :locale-export.csv).} 
     						{--A|append : Append name of group to the name of file (optional, default - empty).}
     						{--X|excel : Set file encoding for Excel (optional, default - UTF-8).}
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
@@ -61,7 +61,7 @@ class ExportToCsvCommand extends Command
 	public function __construct()
 	{
 		parent::__construct();
-		$this->defaultPath = storage_path('app'. DIRECTORY_SEPARATOR .'lang-import-export') . $this->ext;
+		$this->defaultPath = base_path(':locale-export') . $this->ext;
 	}
 
 	/**
@@ -75,11 +75,11 @@ class ExportToCsvCommand extends Command
 
 		$this->sayItsBeginning();
 
-		$translations = $this->getTranslations();
-
-		$this->saveTranslations($translations);
-
-		$this->sayItsFinish();
+		foreach (explode(',', $this->parameters['locale']) as $locale) {
+            $translations = $this->getTranslations($locale);
+            $this->saveTranslations($locale, $translations);
+            $this->info(strtoupper($locale) . ' Translations saved to: ' . $this->getOutputFileName($locale));
+        }
 	}
 
 	/**
@@ -127,14 +127,15 @@ class ExportToCsvCommand extends Command
 			. 'Translations export of '. ($this->parameters['group'] === null ? 'all groups' : $this->parameters['group'] .' group') .' - started.');
 	}
 
-	/**
-	 * Get translations from localization files.
-	 *
-	 * @return array
-	 */
-	private function getTranslations()
+    /**
+     * Get translations from localization files.
+     *
+     * @param $locale
+     * @return array
+     */
+	private function getTranslations($locale)
 	{
-	    $from = LangListService::loadLangList($this->parameters['locale'], $this->parameters['group']);
+	    $from = LangListService::loadLangList($locale, $this->parameters['group']);
 	    if ($this->parameters['target_locale']) {
             $target = LangListService::loadLangList($this->parameters['target_locale'], $this->parameters['group']);
             foreach ($target as $group => $translations) {
@@ -146,14 +147,16 @@ class ExportToCsvCommand extends Command
         return $from;
     }
 
-	/**
-	 * Save fetched translations to file.
-	 *
-	 * @return void
-	 */
-	private function saveTranslations($translations)
+    /**
+     * Save fetched translations to file.
+     *
+     * @param $locale
+     * @param $translations
+     * @return void
+     */
+	private function saveTranslations($locale, $translations)
 	{
-		$output = $this->openFile();
+		$output = $this->openFile($locale);
 
 		$this->saveTranslationsToFile($output, $translations);
 
@@ -165,12 +168,13 @@ class ExportToCsvCommand extends Command
 	 *
 	 * @return FilePointerResource
 	 */
-	private function openFile()
+	private function openFile($locale)
 	{
-		if(substr($this->parameters['output'], -4) != $this->ext)
-			$this->parameters['output'] .= $this->ext;
+        $fileName = $this->getOutputFileName($locale);
+        if(substr($fileName, -4) != $this->ext)
+			$fileName .= $this->ext;
 
-		if (!($output = fopen($this->parameters['output'], 'w'))) {
+		if (!($output = fopen($fileName, 'w'))) {
 			$output = fopen($this->defaultPath . $this->ext, 'w');
 		}
 
@@ -241,15 +245,15 @@ class ExportToCsvCommand extends Command
 		file_put_contents($this->parameters['output'], chr(255) . chr(254) . mb_convert_encoding($data, 'UTF-16LE', 'UTF-8'));
 	}
 
-	/**
-	 * Display output that command is finished and where to find file.
-	 *
-	 * @return void
-	 */
-	private function sayItsFinish()
-	{
-		$this->info('Finished! Translations saved to: '. (substr($this->parameters['output'], strlen(base_path()) + 1))
-			. PHP_EOL);
-	}
+    /**
+     * @param $locale
+     * @return mixed
+     */
+    private function getOutputFileName($locale)
+    {
+        $fileName = $this->parameters['output'];
+        $fileName = str_replace(':locale', $locale, $fileName);
+        return $fileName;
+    }
 
 }

@@ -79,14 +79,14 @@ But there is few more useful parameters:
 
 | name of parameter | description                             | is required? | default value                      |
 |-------------------|-----------------------------------------|--------------|------------------------------------|
-| locale           | The locale to be exported                | NO           | default lang of application        |
+| locale           | The locale to be exported. Multiple separated by comma                | NO           | default lang of application        |
 | group            | The name of translation file to export   | NO           | \* - all files                     |
 | output           | Filename of exported translation files   | NO           | storage/app/lang-import-export.csv |
 | -A / --append    | Append name of group to the name of file | NO           | empty                              |
 | -X / --excel     | Set file encoding (UTF-16) for Excel     | NO           | UTF-8                              |
 | -D / --delimiter | Field delimiter                          | NO           | ,                                  |
 | -E / --enclosure | Field enclosure                          | NO           | "                                  |
-
+| -T / --target-locale | Only missing keys for for this locale are exported                          | NO           | "                                  |
 ### Import
 
 ```

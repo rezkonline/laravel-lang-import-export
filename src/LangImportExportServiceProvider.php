@@ -9,13 +9,6 @@ use LangImportExport\Console\ImportFromCsvCommand;
 class LangImportExportServiceProvider extends ServiceProvider
 {
     /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
-     */
-    protected $defer = true;
-
-    /**
      * Bootstrap the application events.
      *
      * @return void

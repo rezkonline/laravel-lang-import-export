@@ -41,12 +41,8 @@ navigation.tips.play,"Autoplay the slide show"
 Installation
 ------------
 
-Add the following line to the `require` section of your Laravel webapp's `composer.json` file:
-
-```javascript
-    "require": {
-        "aidask/laravel-lang-import-export": "6.0.*"
-    }
+```sh
+    composer require aidask/laravel-lang-import-export
 ```
 
 Run `composer update` to install the package.

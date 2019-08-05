@@ -16,11 +16,11 @@ class ExportToCsvCommand extends Command
      * @var string
      */
     protected $signature = 'lang:export 
-    						{--l|locale? : The locales to be exported. Separated by comma (default - default lang of application).} 
-    						{--t|target: Target languages, only missing keys are exported. Separated by comma.} 
-    						{--g|group: The name of translation file to export (default, groups in config).} 
-    						{--o|output: Filename of exported translation, :locale, :target is replaced (optional, default - storage/:locale:target.csv).} 
-    						{--X|excel: Set file encoding for Excel (optional, default - UTF-8).}
+    						{--l|locale= : The locales to be exported. Separated by comma (default - default lang of application).} 
+    						{--t|target= : Target languages, only missing keys are exported. Separated by comma.} 
+    						{--g|group= : The name of translation file to export (default all groups).} 
+    						{--o|output= : Filename of exported translation, :locale, :target is replaced (optional, default - storage/:locale:target.csv).} 
+    						{--X|excel : Set file encoding for Excel (optional, default - UTF-8).}
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
     						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} ';
 
@@ -37,13 +37,6 @@ class ExportToCsvCommand extends Command
      * @var array
      */
     protected $parameters = [];
-
-    /**
-     * File extension (default .csv).
-     *
-     * @var string
-     */
-    protected $ext = '.csv';
 
     /**
      * Execute the console command.
@@ -84,7 +77,6 @@ class ExportToCsvCommand extends Command
             'locale' => $this->option('locale'),
             'group' => $this->option('group'),
             'output' => $this->option('output'),
-            'append' => $this->option('append'),
             'excel' => $this->option('excel'),
             'delimiter' => $this->option('delimiter'),
             'enclosure' => $this->option('enclosure'),
@@ -94,9 +86,6 @@ class ExportToCsvCommand extends Command
             return !is_null($var);
         });
         $this->parameters = array_merge(config('lang_import_export.export'), $parameters);
-        if ($this->parameters['append']) {
-            $this->parameters['output'] .= '-' . $this->parameters['group'];
-        }
     }
 
     /**
@@ -148,9 +137,6 @@ class ExportToCsvCommand extends Command
     private function openFile($locale, $target)
     {
         $fileName = $this->getOutputFileName($locale, $target);
-        if (substr($fileName, -4) != $this->ext) {
-            $fileName .= $this->ext;
-        }
 
         if (!($output = fopen($fileName, 'w'))) {
             throw new \Exception("$fileName failed to open");
@@ -234,9 +220,7 @@ class ExportToCsvCommand extends Command
     {
         $fileName = $this->parameters['output'];
         $fileName = str_replace(':locale', $locale, $fileName);
-        if ($target) {
-            $fileName = str_replace(':target', $target, $fileName);
-        }
+        $fileName = str_replace(':target', $target, $fileName);
         return $fileName;
     }
 

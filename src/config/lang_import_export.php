@@ -1,9 +1,11 @@
 <?php
 return [
     'export' => [
-        // * for all or array
-        'lang' => 'en',
-        'groups' => '*',
-        'output' => storage_path('/:locale:target.csv'),
+        // * for all or comma separated
+        'locale' => 'en',
+        'target' => null,
+        'group' => null,
+        'excel' => null,
+        'output' => storage_path(':locale:target.csv'),
     ]
 ];

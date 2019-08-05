@@ -45,7 +45,7 @@ Add the following line to the `require` section of your Laravel webapp's `compos
 
 ```javascript
     "require": {
-        "AidasK/laravel-lang-import-export": "6.0.*"
+        "aidask/laravel-lang-import-export": "6.0.*"
     }
 ```
 
@@ -57,7 +57,7 @@ For previous versions of Laravel, you need to update `config/app.php` by adding 
 ```php
     'providers' => array(
         /* ... */
-        'AidasK\LangImportExportServiceProvider'
+        'LangImportExport\LangImportExportServiceProvider'
     )
 ```
 

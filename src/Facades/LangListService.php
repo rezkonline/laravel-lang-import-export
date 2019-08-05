@@ -1,6 +1,6 @@
 <?php
 
-namespace HighSolutions\LangImportExport\Facades;
+namespace LangImportExport\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

@@ -1,14 +1,13 @@
 <?php
 
-namespace HighSolutions\LangImportExport;
+namespace LangImportExport;
 
 use Illuminate\Support\ServiceProvider;
-use HighSolutions\LangImportExport\Console\ExportToCsvCommand;
-use HighSolutions\LangImportExport\Console\ImportFromCsvCommand;
+use LangImportExport\Console\ExportToCsvCommand;
+use LangImportExport\Console\ImportFromCsvCommand;
 
 class LangImportExportServiceProvider extends ServiceProvider
 {
-
     /**
      * Indicates if loading of the provider is deferred.
      *
@@ -23,8 +22,15 @@ class LangImportExportServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->registerExportToCsvCommand();
-        $this->registerImportFromCsvCommand();
+        $this->publishes([
+            __DIR__ . '/config/lang_import_export.php' => config_path('lang_import_export.php'),
+        ]);
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ImportFromCsvCommand::class,
+                ExportToCsvCommand::class,
+            ]);
+        }
     }
 
     /**
@@ -34,40 +40,11 @@ class LangImportExportServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom([
+            __DIR__ . '/config/lang_import_export.php', 'lang_import_export'
+        ]);
         $this->app->singleton('LangImportExportLangListService', function () {
             return new LangListService;
         });
     }
-
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides()
-    {
-        return [
-            'lang-export.csv',
-            'lang-import.csv'
-        ];
-    }
-
-    private function registerExportToCsvCommand()
-    {
-        $this->app->singleton('lang-export.csv', function ($app) {
-            return new ExportToCsvCommand();
-        });
-
-        $this->commands('lang-export.csv');
-    }
-
-    private function registerImportFromCsvCommand()
-    {
-        $this->app->singleton('lang-import.csv', function ($app) {
-            return new ImportFromCsvCommand();
-        });
-
-        $this->commands('lang-import.csv');
-    }
-
 }

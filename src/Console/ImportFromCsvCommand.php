@@ -1,11 +1,11 @@
 <?php
 
-namespace HighSolutions\LangImportExport\Console;
+namespace LangImportExport\Console;
 
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
-use HighSolutions\LangImportExport\Facades\LangListService;
+use LangImportExport\Facades\LangListService;
 
 class ImportFromCsvCommand extends Command
 {

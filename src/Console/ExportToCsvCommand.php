@@ -1,11 +1,11 @@
 <?php
 
-namespace HighSolutions\LangImportExport\Console;
+namespace LangImportExport\Console;
 
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
-use HighSolutions\LangImportExport\Facades\LangListService;
+use LangImportExport\Facades\LangListService;
 
 class ExportToCsvCommand extends Command
 {
@@ -16,14 +16,13 @@ class ExportToCsvCommand extends Command
      * @var string
      */
     protected $signature = 'lang:export 
-    						{locale? : The locales to be exported. Separated by comma (default - default lang of application).} 
-    						{group? : The name of translation file to export (default - all files).} 
-    						{output? : Filename of exported translation, :locale, :target is replaced (optional, default - :locale:target-export.csv).} 
-    						{--A|append : Append name of group to the name of file (optional, default - empty).}
-    						{--X|excel : Set file encoding for Excel (optional, default - UTF-8).}
+    						{--l|locale? : The locales to be exported. Separated by comma (default - default lang of application).} 
+    						{--t|target: Target languages, only missing keys are exported. Separated by comma.} 
+    						{--g|group: The name of translation file to export (default, groups in config).} 
+    						{--o|output: Filename of exported translation, :locale, :target is replaced (optional, default - storage/:locale:target.csv).} 
+    						{--X|excel: Set file encoding for Excel (optional, default - UTF-8).}
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
-    						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} 
-    						{--T|target-locale=" : Target languages, only missing keys are exported. Separated by comma (optional).} ';
+    						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} ';
 
     /**
      * The console command description.
@@ -40,29 +39,11 @@ class ExportToCsvCommand extends Command
     protected $parameters = [];
 
     /**
-     * Default path for file save.
-     *
-     * @var string
-     */
-    protected $defaultPath;
-
-    /**
      * File extension (default .csv).
      *
      * @var string
      */
     protected $ext = '.csv';
-
-    /**
-     * Class constructor.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-        $this->defaultPath = base_path(':locale:target-export') . $this->ext;
-    }
 
     /**
      * Execute the console command.
@@ -73,10 +54,10 @@ class ExportToCsvCommand extends Command
     {
         $this->getParameters();
 
-        $this->sayItsBeginning();
+        $this->info('Translations export started.');
 
         foreach ($this->strToArray($this->parameters['locale']) as $locale) {
-            foreach ($this->strToArray($this->parameters['target_locale'], [null]) as $target) {
+            foreach ($this->strToArray($this->parameters['target'], [null]) as $target) {
                 $translations = $this->getTranslations($locale, $target);
                 $this->saveTranslations($locale, $target, $translations);
                 $this->info(strtoupper($locale) . strtoupper($target ?: '') . ' Translations saved to: ' . $this->getOutputFileName($locale, $target));
@@ -99,42 +80,23 @@ class ExportToCsvCommand extends Command
      */
     private function getParameters()
     {
-        $this->parameters = [
-            'group' => $this->argument('group'),
-            'locale' => $this->argument('locale') === null ? config('app.locale') : $this->argument('locale'),
-            'output' => $this->argument('output') === null ? $this->defaultPath : base_path($this->argument('output')),
-            'append' => $this->option('append') !== false,
-            'excel' => $this->option('excel') !== false,
+        $parameters = [
+            'locale' => $this->option('locale'),
+            'group' => $this->option('group'),
+            'output' => $this->option('output'),
+            'append' => $this->option('append'),
+            'excel' => $this->option('excel'),
             'delimiter' => $this->option('delimiter'),
             'enclosure' => $this->option('enclosure'),
-            'target_locale' => $this->option('target-locale'),
+            'target' => $this->option('target'),
         ];
-
-        $this->setDefaultPath();
-    }
-
-    /**
-     * Set possible file names.
-     *
-     * @return void
-     */
-    private function setDefaultPath()
-    {
+        $parameters = array_filter($parameters, function ($var) {
+            return !is_null($var);
+        });
+        $this->parameters = array_merge(config('lang_import_export.export'), $parameters);
         if ($this->parameters['append']) {
             $this->parameters['output'] .= '-' . $this->parameters['group'];
-            $this->defaultPath .= '-' . $this->parameters['group'];
         }
-    }
-
-    /**
-     * Display output that command has started and which groups are being exported.
-     *
-     * @return void
-     */
-    private function sayItsBeginning()
-    {
-        $this->info(PHP_EOL
-            . 'Translations export of ' . ($this->parameters['group'] === null ? 'all groups' : $this->parameters['group'] . ' group') . ' - started.');
     }
 
     /**
@@ -180,7 +142,8 @@ class ExportToCsvCommand extends Command
      *
      * @param $locale
      * @param $target
-     * @return FilePointerResource
+     * @throws \Exception
+     * @return resource
      */
     private function openFile($locale, $target)
     {
@@ -190,7 +153,7 @@ class ExportToCsvCommand extends Command
         }
 
         if (!($output = fopen($fileName, 'w'))) {
-            $output = fopen($this->defaultPath . $this->ext, 'w');
+            throw new \Exception("$fileName failed to open");
         }
 
         fputs($output, "\xEF\xBB\xBF");
@@ -201,7 +164,7 @@ class ExportToCsvCommand extends Command
     /**
      * Save content of translation files to specified file.
      *
-     * @param FilePointerResource $output
+     * @param resource $output
      * @param array $translations
      * @return void
      */

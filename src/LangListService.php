@@ -1,6 +1,6 @@
 <?php
 
-namespace HighSolutions\LangImportExport;
+namespace LangImportExport;
 
 use Lang;
 use File;

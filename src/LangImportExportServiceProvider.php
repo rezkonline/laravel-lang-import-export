@@ -3,8 +3,10 @@
 namespace LangImportExport;
 
 use Illuminate\Support\ServiceProvider;
+use LangImportExport\Console\CheckPlaceholdersCommand;
 use LangImportExport\Console\ExportToCsvCommand;
 use LangImportExport\Console\ImportFromCsvCommand;
+use LangImportExport\Console\ValidationCommand;
 
 class LangImportExportServiceProvider extends ServiceProvider
 {
@@ -22,6 +24,7 @@ class LangImportExportServiceProvider extends ServiceProvider
             $this->commands([
                 ImportFromCsvCommand::class,
                 ExportToCsvCommand::class,
+                ValidationCommand::class,
             ]);
         }
     }

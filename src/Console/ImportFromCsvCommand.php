@@ -16,12 +16,12 @@ class ImportFromCsvCommand extends Command
      * @var string
      */
     protected $signature = 'lang:import
-							{locale? : The locale to be imported (default - default lang of application).} 
-    						{group? : The name of translation file to imported (default - all files).} 
-    						{input? : Filename of file to be imported with translation files(optional, default - storage/app/lang-import-export.csv).} 
+							{locale= : The locale to be imported (default - default lang of application).} 
+    						{input= : Filename of file to be imported with translation files(optional, default - lang-import-export.csv).} 
+    						{--g|group= : The name of translation file to imported (default - all files).} 
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
     						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} 
-    						{--C|escape=" : Field escape (optional, default - \'"\').}
+    						{--escape=" : Field escape (optional, default - \'"\').}
     						{--X|excel : Set file encoding from Excel (optional, default - UTF-8).}';
 
     /**
@@ -38,30 +38,6 @@ class ImportFromCsvCommand extends Command
      */
     protected $parameters = [];
 
-    /**
-     * Default path for file read.
-     *
-     * @var string
-     */
-    protected $defaultPath;
-
-    /**
-     * File extension (default .csv).
-     *
-     * @var string
-     */
-    protected $ext = '.csv';
-
-    /**
-     * Class constructor.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-        $this->defaultPath = storage_path('app' . DIRECTORY_SEPARATOR . 'lang-import-export') . $this->ext;
-    }
 
     /**
      * Execute the console command.
@@ -71,14 +47,8 @@ class ImportFromCsvCommand extends Command
     public function handle()
     {
         $this->getParameters();
-
-        $this->sayItsBeginning();
-
         $translations = $this->getTranslations();
-
         $this->saveTranslations($translations);
-
-        $this->sayItsFinish();
     }
 
     /**
@@ -89,29 +59,14 @@ class ImportFromCsvCommand extends Command
     private function getParameters()
     {
         $this->parameters = [
-            'locale' => $this->argument('locale') === null ? config('app.locale') : $this->argument('locale'),
-            'group' => $this->argument('group'),
-            'input' => $this->argument('input') === null ? $this->defaultPath : base_path($this->argument('input')),
+            'locale' => $this->argument('locale'),
+            'input' => $this->argument('input'),
+            'group' => $this->option('group'),
             'delimiter' => $this->option('delimiter'),
             'enclosure' => $this->option('enclosure'),
             'escape' => $this->option('escape'),
             'excel' => $this->option('excel') !== false,
         ];
-
-        if (substr($this->parameters['input'], -4) != $this->ext) {
-            $this->parameters['input'] .= $this->ext;
-        }
-    }
-
-    /**
-     * Display output that command has started and which groups are being imported.
-     *
-     * @return void
-     */
-    private function sayItsBeginning()
-    {
-        $this->info(PHP_EOL
-            . 'Translations import of ' . ($this->parameters['group'] === false ? 'all groups' : $this->parameters['group'] . ' group') . ' has started.');
     }
 
     /**
@@ -133,14 +88,14 @@ class ImportFromCsvCommand extends Command
     /**
      * Opens file to read content.
      *
-     * @return FileInputPointer
+     * @return resource
+     * @throws \Exception
      */
     private function openFile()
     {
         if (($input = fopen($this->parameters['input'], 'r')) === false) {
-            $this->error('Can\'t open the input file!');
+            throw new \Exception('File can not be opened ' . $this->parameters['input']);
         }
-
         return $input;
     }
 
@@ -158,14 +113,18 @@ class ImportFromCsvCommand extends Command
         }
 
         $translations = [];
+        $confirmed = false;
         while (($data = fgetcsv($input, 0, $this->parameters['delimiter'], $this->parameters['enclosure'],
                 $this->parameters['escape'])) !== false) {
             if (isset($translations[$data[0]]) == false) {
                 $translations[$data[0]] = [];
             }
 
-            if (sizeof($data) != 3) {
-                throw new \Exception("Wrong format of file. Try launch command with -X option if you use Excel for editing file.");
+            $columns = sizeof($data);
+            if ($columns < 3 || $columns > 3 &&
+                !($confirmed || $confirmed = $this->confirm("File contains $columns columns, continue?"))
+            ) {
+                throw new \Exception('Canceled by user');
             }
 
             $translations[$data[0]][$data[1]] = $data[2];
@@ -204,17 +163,4 @@ class ImportFromCsvCommand extends Command
     {
         LangListService::writeLangList($this->parameters['locale'], $this->parameters['group'], $translations);
     }
-
-    /**
-     * Display output that command is finished and where to find file.
-     *
-     * @return void
-     */
-    private function sayItsFinish()
-    {
-        $this->info('Finished! Translations imported from: ' . (substr($this->parameters['input'],
-                strlen(base_path()) + 1))
-            . PHP_EOL);
-    }
-
 }

@@ -20,6 +20,7 @@ class ExportToCsvCommand extends Command
     						{--t|target= : Target languages, only missing keys are exported. Separated by comma.} 
     						{--g|group= : The name of translation file to export (default all groups).} 
     						{--o|output= : Filename of exported translation, :locale, :target is replaced (optional, default - storage/:locale:target.csv).} 
+    						{--z|zip= : Zip all files.}
     						{--X|excel : Set file encoding for Excel (optional, default - UTF-8).}
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
     						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} ';
@@ -39,15 +40,20 @@ class ExportToCsvCommand extends Command
     protected $parameters = [];
 
     /**
+     * List of files created by the export
+     * @var array
+     */
+    protected $files = [];
+
+    /**
      * Execute the console command.
      *
      * @return void
+     * @throws \Exception
      */
     public function handle()
     {
         $this->getParameters();
-
-        $this->info('Translations export started.');
 
         foreach ($this->strToArray($this->parameters['locale']) as $locale) {
             foreach ($this->strToArray($this->parameters['target'], [null]) as $target) {
@@ -55,6 +61,17 @@ class ExportToCsvCommand extends Command
                 $this->saveTranslations($locale, $target, $translations);
                 $this->info(strtoupper($locale) . strtoupper($target ?: '') . ' Translations saved to: ' . $this->getOutputFileName($locale, $target));
             }
+        }
+        if ($zipName = $this->parameters['zip']) {
+            $zip = new \ZipArchive;
+            if (!$zip->open($zipName, \ZipArchive::CREATE)) {
+                throw new \Exception("Failed to open $zipName");
+            }
+            foreach ($this->files as $file) {
+                $zip->addFile($file);
+                unlink($file);
+            }
+            $zip->close();
         }
     }
 
@@ -81,6 +98,7 @@ class ExportToCsvCommand extends Command
             'delimiter' => $this->option('delimiter'),
             'enclosure' => $this->option('enclosure'),
             'target' => $this->option('target'),
+            'zip' => $this->option('zip'),
         ];
         $parameters = array_filter($parameters, function ($var) {
             return !is_null($var);
@@ -141,6 +159,7 @@ class ExportToCsvCommand extends Command
         if (!($output = fopen($fileName, 'w'))) {
             throw new \Exception("$fileName failed to open");
         }
+        $this->files[] = $fileName;
 
         fputs($output, "\xEF\xBB\xBF");
 

@@ -29,6 +29,9 @@
             "src/Support/helpers.php"
         ]
     },
+    "suggest": {
+        "ext-zip": "zip exported files"
+    },
     "extra": {
         "component": "package",
         "frameworks": ["Laravel 5.7"],

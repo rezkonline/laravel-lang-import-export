@@ -66,10 +66,20 @@ The package currently provides two commands, one for exporting the files and one
 
 ```bash
 php artisan lang:export --locale en
-php artisan lang:export --locale en --target fr # export en translations only missing in fr locale
+php artisan lang:export --locale en --target fr  # export en translations only missing in fr locale
+php artisan lang:export -z all.zip  # archive all the files
 ```
 
 ### Import
+
+
+
+### Config
+
+You can export package config if you want to set defaults for the commands:
+```bash
+php artisan vendor:publish
+```
 
 ```
 php artisan lang:import

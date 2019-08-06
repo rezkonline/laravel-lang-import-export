@@ -63,15 +63,19 @@ class ExportToCsvCommand extends Command
             }
         }
         if ($zipName = $this->parameters['zip']) {
+            $this->info('Creating archive...');
             $zip = new \ZipArchive;
             if (!$zip->open($zipName, \ZipArchive::CREATE)) {
                 throw new \Exception("Failed to open $zipName");
             }
             foreach ($this->files as $file) {
-                $zip->addFile($file);
-                unlink($file);
+                $zip->addFile($file, basename($file));
             }
             $zip->close();
+            $this->info('Cleaning up the files...');
+            foreach ($this->files as $file) {
+                unlink($file);
+            }
         }
     }
 
@@ -242,5 +246,4 @@ class ExportToCsvCommand extends Command
         $fileName = str_replace(':target', $target, $fileName);
         return $fileName;
     }
-
 }

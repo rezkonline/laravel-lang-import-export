@@ -6,6 +6,7 @@ return [
         'target' => null,
         'group' => null,
         'excel' => null,
+        'zip' => null,
         'output' => storage_path(':locale:target.csv'),
     ]
 ];

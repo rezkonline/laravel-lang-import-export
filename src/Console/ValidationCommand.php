@@ -19,6 +19,7 @@ class ValidationCommand extends Command
                             {target? : Locale to be checked.} 
     						{--l|locale= : The locales to be exported. Separated by comma (default - default lang of application).} 
     						{--g|group= : The name of translation file to export (default all groups).}
+    						{--m|missing : Show missing translations}
     						';
 
     /**
@@ -46,20 +47,14 @@ class ValidationCommand extends Command
         $this->getParameters();
 
         $baseTranslations = LangListService::loadLangList($this->parameters['locale'], $this->parameters['group']);
+        if (empty($this->parameters['target'])) {
+            $this->error('--target is required');
+        }
         foreach ($this->strToArray($this->parameters['target']) as $locale) {
             $targetTranslations = LangListService::loadLangList($locale, $this->parameters['group']);
-            foreach ($targetTranslations as $group => $translations) {
-                foreach ($translations as $key => $translation) {
-                    if (isset($baseTranslations[$group][$key])) {
-                        $placeholders = $this->matchPlaceholders($baseTranslations[$group][$key]);
-                        foreach ($placeholders as $placeholder) {
-                            if (strpos($translation, $placeholder) === false) {
-                                $this->warning("$locale/$group.$key is missing \"$placeholder\".");
-                                $this->info($translation, 'v');
-                            }
-                        }
-                    }
-                }
+            $this->validatePlaceholders($targetTranslations, $baseTranslations, $locale);
+            if ($this->parameters['missing']) {
+                $this->showMissing($targetTranslations, $baseTranslations, $locale);
             }
         }
     }
@@ -81,18 +76,58 @@ class ValidationCommand extends Command
     {
         $parameters = [
             'target' => $this->argument('target'),
-            'locale' => $this->option('locale'),
+            'locale' => $this->option('locale') ?: \App::getLocale(),
             'group' => $this->option('group'),
+            'missing' => $this->option('missing'),
         ];
         $parameters = array_filter($parameters, function ($var) {
             return !is_null($var);
         });
-        $this->parameters = array_merge(config('lang_import_export.check'), $parameters);
+        $this->parameters = array_merge(config('lang_import_export.validate', []), $parameters);
     }
 
     private function matchPlaceholders($translation)
     {
         preg_match_all('~(:[a-zA-Z0-9_]+)~', $translation, $m);
         return $m[1] ?? [];
+    }
+
+    /**
+     * @param $targetTranslations
+     * @param $baseTranslations
+     * @param $locale
+     */
+    private function validatePlaceholders($targetTranslations, $baseTranslations, $locale): void
+    {
+        $this->info('Searching for missing placeholers...');
+        foreach ($targetTranslations as $group => $translations) {
+            foreach ($translations as $key => $translation) {
+                if (isset($baseTranslations[$group][$key]) && is_string($baseTranslations[$group][$key])) {
+                    $placeholders = $this->matchPlaceholders($baseTranslations[$group][$key]);
+                    foreach ($placeholders as $placeholder) {
+                        if (strpos($translation, $placeholder) === false) {
+                            $this->warn("$locale/$group.$key is missing \"$placeholder\".");
+                            $this->info($translation, 'v');
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private function showMissing($targetTranslations, $baseTranslations, $locale)
+    {
+        $this->info('Searching for missing keys...');
+        foreach ($baseTranslations as $group => $translations) {
+            if (!isset($targetTranslations[$group])) {
+                $this->warn("$locale/$group entire group is missing");
+                continue;
+            }
+            foreach ($translations as $key => $translation) {
+                if (!isset($targetTranslations[$group][$key])) {
+                    $this->warn("$locale/$group.$key is missing");
+                }
+            }
+        }
     }
 }

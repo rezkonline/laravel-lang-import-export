@@ -107,7 +107,7 @@ class ExportToCsvCommand extends Command
         $parameters = array_filter($parameters, function ($var) {
             return !is_null($var);
         });
-        $this->parameters = array_merge(config('lang_import_export.export'), $parameters);
+        $this->parameters = array_merge(config('lang_import_export.export', []), $parameters);
     }
 
     /**

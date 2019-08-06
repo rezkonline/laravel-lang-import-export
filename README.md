@@ -78,6 +78,12 @@ php artisan lang:import espaniol.csv -l es
 php artisan lang:import espaniol.csv -l es -g paggination,validation # import only cretain groups
 ```
 
+### Validate
+```bash
+php artisan lang:validate ar -m -v
+```
+![Laravel-Lang-Import-Export validation example](https://raw.githubusercontent.com/AidasK/laravel-lang-import-export/master/validation.png)
+
 
 ### Config
 

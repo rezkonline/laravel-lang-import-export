@@ -1,8 +1,7 @@
 <?php
 return [
     'export' => [
-        // * for all or comma separated
-        'locale' => 'en',
+        'locale' => 'en', // * for all or comma separated
         'target' => null,
         'group' => null,
         'excel' => null,
@@ -17,5 +16,10 @@ return [
         'enclosure' => null,
         'escape' => null,
         'excel' => null,
-    ]
+    ],
+    'validate' => [
+        'target' => null,
+        'locale' => null,
+        'group' => null,
+    ],
 ];

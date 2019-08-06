@@ -16,8 +16,8 @@ class ImportFromCsvCommand extends Command
      * @var string
      */
     protected $signature = 'lang:import
-							{locale= : The locale to be imported (default - default lang of application).} 
-    						{input= : Filename of file to be imported with translation files(optional, default - lang-import-export.csv).} 
+    						{input : Filename of file to be imported with translation files.} 
+							{--l|locale= : The locale to be imported (default - parsed from file name).} 
     						{--g|group= : The name of translation file to imported (default - all files).} 
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
     						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} 
@@ -47,8 +47,18 @@ class ImportFromCsvCommand extends Command
     public function handle()
     {
         $this->getParameters();
-        $translations = $this->getTranslations();
-        $this->saveTranslations($translations);
+        $fileName = $this->parameters['input'];
+        if (!$this->parameters['locale']) {
+            $locale = pathinfo($fileName, PATHINFO_FILENAME);
+            $this->parameters['locale'] = $locale;
+            if (file_exists(resource_path("lang/$locale"))) {
+                $this->info("Detected locale $locale");
+            } else {
+                throw new \Exception("Could not detect locale of $fileName");
+            }
+        }
+        $translations = $this->readTranslations($fileName);
+        LangListService::writeLangList($this->parameters['locale'], $this->parameters['group'], $translations);
     }
 
     /**
@@ -58,45 +68,37 @@ class ImportFromCsvCommand extends Command
      */
     private function getParameters()
     {
-        $this->parameters = [
-            'locale' => $this->argument('locale'),
+        $parameters = [
             'input' => $this->argument('input'),
+            'locale' => $this->option('locale'),
             'group' => $this->option('group'),
             'delimiter' => $this->option('delimiter'),
             'enclosure' => $this->option('enclosure'),
             'escape' => $this->option('escape'),
-            'excel' => $this->option('excel') !== false,
+            'excel' => $this->option('excel'),
         ];
+        $parameters = array_filter($parameters, function ($var) {
+            return !is_null($var);
+        });
+        $this->parameters = array_merge(config('lang_import_export.import'), $parameters);
     }
+
+
 
     /**
      * Get translations from CSV file.
      *
      * @return array
      */
-    private function getTranslations()
+    private function readTranslations($fileName)
     {
-        $input = $this->openFile();
-
+        if (($input = fopen($fileName, 'r')) === false) {
+            throw new \Exception('File can not be opened ' . $fileName);
+        }
         $translations = $this->readFile($input);
-
-        $this->closeFile($input);
+        fclose($input);
 
         return $translations;
-    }
-
-    /**
-     * Opens file to read content.
-     *
-     * @return resource
-     * @throws \Exception
-     */
-    private function openFile()
-    {
-        if (($input = fopen($this->parameters['input'], 'r')) === false) {
-            throw new \Exception('File can not be opened ' . $this->parameters['input']);
-        }
-        return $input;
     }
 
     /**
@@ -121,7 +123,10 @@ class ImportFromCsvCommand extends Command
             }
 
             $columns = sizeof($data);
-            if ($columns < 3 || $columns > 3 &&
+            if ($columns < 3) {
+                throw new \Exception("File has only $columns column/s");
+            }
+            if ($columns > 3 &&
                 !($confirmed || $confirmed = $this->confirm("File contains $columns columns, continue?"))
             ) {
                 throw new \Exception('Canceled by user');
@@ -142,25 +147,5 @@ class ImportFromCsvCommand extends Command
     {
         $data = file_get_contents($this->parameters['input']);
         file_put_contents($this->parameters['input'], mb_convert_encoding($data, 'UTF-8', 'UTF-16'));
-    }
-
-    /**
-     * Close file.
-     *
-     * @return void
-     */
-    private function closeFile($input)
-    {
-        fclose($input);
-    }
-
-    /**
-     * Save fetched translations to file.
-     *
-     * @return void
-     */
-    private function saveTranslations($translations)
-    {
-        LangListService::writeLangList($this->parameters['locale'], $this->parameters['group'], $translations);
     }
 }

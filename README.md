@@ -68,10 +68,15 @@ The package currently provides two commands, one for exporting the files and one
 php artisan lang:export --locale en
 php artisan lang:export --locale en --target fr  # export en translations only missing in fr locale
 php artisan lang:export -z all.zip  # archive all the files
+php artisan lang:export --locale en -g paggination,validation  # export only cretain groups 
 ```
 
 ### Import
-
+```bash
+php artisan lang:import es.csv # localed autodetected from file name
+php artisan lang:import espaniol.csv -l es
+php artisan lang:import espaniol.csv -l es -g paggination,validation # import only cretain groups
+```
 
 
 ### Config

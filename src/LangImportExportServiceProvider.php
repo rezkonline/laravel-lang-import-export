@@ -33,9 +33,7 @@ class LangImportExportServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom([
-            __DIR__ . '/config/lang_import_export.php', 'lang_import_export'
-        ]);
+        $this->mergeConfigFrom(__DIR__ . '/config/lang_import_export.php', 'lang_import_export');
         $this->app->singleton('LangImportExportLangListService', function () {
             return new LangListService;
         });

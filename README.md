@@ -76,6 +76,7 @@ php artisan lang:export --locale en -g paggination,validation  # export only cre
 php artisan lang:import es.csv # localed autodetected from file name
 php artisan lang:import espaniol.csv -l es
 php artisan lang:import espaniol.csv -l es -g paggination,validation # import only cretain groups
+php artisan lang:import es.csv -p # validate imported translations for missing placeholders (see below)
 ```
 
 ### Validate

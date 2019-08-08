@@ -17,8 +17,8 @@ class ValidationCommand extends Command
      */
     protected $signature = 'lang:validate 
                             {target? : Locale to be checked.} 
-    						{--l|locale= : The locales to be exported. Separated by comma (default - default lang of application).} 
-    						{--g|group= : The name of translation file to export (default all groups).}
+    						{--l|locale= : Base locale (default - base locale from config).} 
+    						{--g|group= : The name of translation file to export (default - base group from config).}
     						{--m|missing : Show missing translations}
     						';
 
@@ -30,13 +30,6 @@ class ValidationCommand extends Command
     protected $description = "Check language files for missing or misspelled placeholders";
 
     /**
-     * Parameters provided to command.
-     *
-     * @var array
-     */
-    protected $parameters = [];
-
-    /**
      * Execute the console command.
      *
      * @return void
@@ -44,16 +37,17 @@ class ValidationCommand extends Command
      */
     public function handle()
     {
-        $this->getParameters();
-
-        $baseTranslations = LangListService::loadLangList($this->parameters['locale'], $this->parameters['group']);
-        if (empty($this->parameters['target'])) {
+        $baseLocale = $this->option('locale') ?: config('lang_import_export.base_locale');
+        $groups = $this->option('group') ?: config('lang_import_export.base_group');
+        $baseTranslations = LangListService::loadLangList($baseLocale, $groups);
+        $target = $this->argument('target');
+        if (empty($target)) {
             $this->error('--target is required');
         }
-        foreach ($this->strToArray($this->parameters['target']) as $locale) {
-            $targetTranslations = LangListService::loadLangList($locale, $this->parameters['group']);
+        foreach ($this->strToArray($target) as $locale) {
+            $targetTranslations = LangListService::loadLangList($locale, $groups);
             $this->validatePlaceholders($targetTranslations, $baseTranslations, $locale);
-            if ($this->parameters['missing']) {
+            if ($this->option('missing')) {
                 $this->showMissing($targetTranslations, $baseTranslations, $locale);
             }
         }
@@ -68,50 +62,17 @@ class ValidationCommand extends Command
     }
 
     /**
-     * Fetch command parameters (arguments and options) and analyze them.
-     *
-     * @return void
-     */
-    private function getParameters()
-    {
-        $parameters = [
-            'target' => $this->argument('target'),
-            'locale' => $this->option('locale') ?: \App::getLocale(),
-            'group' => $this->option('group'),
-            'missing' => $this->option('missing'),
-        ];
-        $parameters = array_filter($parameters, function ($var) {
-            return !is_null($var);
-        });
-        $this->parameters = array_merge(config('lang_import_export.validate', []), $parameters);
-    }
-
-    private function matchPlaceholders($translation)
-    {
-        preg_match_all('~(:[a-zA-Z0-9_]+)~', $translation, $m);
-        return $m[1] ?? [];
-    }
-
-    /**
      * @param $targetTranslations
      * @param $baseTranslations
      * @param $locale
      */
-    private function validatePlaceholders($targetTranslations, $baseTranslations, $locale): void
+    private function validatePlaceholders($targetTranslations, $baseTranslations, $locale)
     {
         $this->info('Searching for missing placeholers...');
-        foreach ($targetTranslations as $group => $translations) {
-            foreach ($translations as $key => $translation) {
-                if (isset($baseTranslations[$group][$key]) && is_string($baseTranslations[$group][$key])) {
-                    $placeholders = $this->matchPlaceholders($baseTranslations[$group][$key]);
-                    foreach ($placeholders as $placeholder) {
-                        if (strpos($translation, $placeholder) === false) {
-                            $this->warn("$locale/$group.$key is missing \"$placeholder\".");
-                            $this->info($translation, 'v');
-                        }
-                    }
-                }
-            }
+        foreach (LangListService::validatePlaceholders($targetTranslations, $baseTranslations) as $errors) {
+            $this->warn($locale . "/{$errors['group']}.{$errors['key']} is missing \"{$errors['placeholder']}\".");
+            $this->info($errors['translation'], 'v');
+            $this->info($errors['baseTranslation'], 'vv');
         }
     }
 
@@ -124,7 +85,7 @@ class ValidationCommand extends Command
                 continue;
             }
             foreach ($translations as $key => $translation) {
-                if (!isset($targetTranslations[$group][$key])) {
+                if (!empty($baseTranslations[$group][$key]) && !isset($targetTranslations[$group][$key])) {
                     $this->warn("$locale/$group.$key is missing");
                 }
             }

@@ -16,10 +16,10 @@ class ExportToCsvCommand extends Command
      * @var string
      */
     protected $signature = 'lang:export 
-    						{--l|locale= : The locales to be exported. Separated by comma (default - default lang of application).} 
+    						{--l|locale= : The locales to be exported. Separated by comma (default - base locale from config).} 
     						{--t|target= : Target languages, only missing keys are exported. Separated by comma.} 
-    						{--g|group= : The name of translation file to export (default all groups).} 
-    						{--o|output= : Filename of exported translation, :locale, :target is replaced (optional, default - storage/:locale:target.csv).} 
+    						{--g|group= : The name of translation file to export (default - base group from config).} 
+    						{--o|output= : Filename of exported translation, :locale, :target is replaced (default - export_path from config).} 
     						{--z|zip= : Zip all files.}
     						{--X|excel : Set file encoding for Excel (optional, default - UTF-8).}
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
@@ -30,14 +30,7 @@ class ExportToCsvCommand extends Command
      *
      * @var string
      */
-    protected $description = "Exports the language files to CSV file";
-
-    /**
-     * Parameters provided to command.
-     *
-     * @var array
-     */
-    protected $parameters = [];
+    protected $description = "Exports language files to CSV file";
 
     /**
      * List of files created by the export
@@ -53,16 +46,14 @@ class ExportToCsvCommand extends Command
      */
     public function handle()
     {
-        $this->getParameters();
-
-        foreach ($this->strToArray($this->parameters['locale']) as $locale) {
-            foreach ($this->strToArray($this->parameters['target'], [null]) as $target) {
+        foreach ($this->strToArray($this->option('locale')) as $locale) {
+            foreach ($this->strToArray($this->option('target'), [null]) as $target) {
                 $translations = $this->getTranslations($locale, $target);
                 $this->saveTranslations($locale, $target, $translations);
                 $this->info(strtoupper($locale) . strtoupper($target ?: '') . ' Translations saved to: ' . $this->getOutputFileName($locale, $target));
             }
         }
-        if ($zipName = $this->parameters['zip']) {
+        if ($zipName = $this->option('zip')) {
             $this->info('Creating archive...');
             $zip = new \ZipArchive;
             if (!$zip->open($zipName, \ZipArchive::CREATE)) {
@@ -88,29 +79,6 @@ class ExportToCsvCommand extends Command
     }
 
     /**
-     * Fetch command parameters (arguments and options) and analyze them.
-     *
-     * @return void
-     */
-    private function getParameters()
-    {
-        $parameters = [
-            'locale' => $this->option('locale'),
-            'group' => $this->option('group'),
-            'output' => $this->option('output'),
-            'excel' => $this->option('excel'),
-            'delimiter' => $this->option('delimiter'),
-            'enclosure' => $this->option('enclosure'),
-            'target' => $this->option('target'),
-            'zip' => $this->option('zip'),
-        ];
-        $parameters = array_filter($parameters, function ($var) {
-            return !is_null($var);
-        });
-        $this->parameters = array_merge(config('lang_import_export.export', []), $parameters);
-    }
-
-    /**
      * Get translations from localization files.
      *
      * @param $locale
@@ -119,9 +87,10 @@ class ExportToCsvCommand extends Command
      */
     private function getTranslations($locale, $target = null)
     {
-        $from = LangListService::loadLangList($locale, $this->parameters['group']);
+        $group = $this->option('group') ?: config('lang_import_export.base_group');
+        $from = LangListService::loadLangList($locale, $group);
         if ($target) {
-            $targetList = LangListService::loadLangList($target, $this->parameters['group']);
+            $targetList = LangListService::loadLangList($target, $group);
             foreach ($targetList as $group => $translations) {
                 foreach ($translations as $key => $v) {
                     unset($from[$group][$key]);
@@ -203,7 +172,7 @@ class ExportToCsvCommand extends Command
     {
         $data = func_get_args();
         $output = array_shift($data);
-        fputcsv($output, $data, $this->parameters['delimiter'], $this->parameters['enclosure']);
+        fputcsv($output, $data, $this->option('delimiter'), $this->option('enclosure'));
     }
 
     /**
@@ -216,7 +185,7 @@ class ExportToCsvCommand extends Command
     {
         fclose($output);
 
-        if ($this->parameters['excel']) {
+        if ($this->option('excel')) {
             $this->adjustToExcel();
         }
     }
@@ -229,8 +198,8 @@ class ExportToCsvCommand extends Command
      */
     private function adjustToExcel()
     {
-        $data = file_get_contents($this->parameters['output']);
-        file_put_contents($this->parameters['output'],
+        $data = file_get_contents($this->option('output'));
+        file_put_contents($this->option('output'),
             chr(255) . chr(254) . mb_convert_encoding($data, 'UTF-16LE', 'UTF-8'));
     }
 
@@ -241,7 +210,7 @@ class ExportToCsvCommand extends Command
      */
     private function getOutputFileName($locale, $target = null)
     {
-        $fileName = $this->parameters['output'];
+        $fileName = $this->option('output');
         $fileName = str_replace(':locale', $locale, $fileName);
         $fileName = str_replace(':target', $target, $fileName);
         return $fileName;

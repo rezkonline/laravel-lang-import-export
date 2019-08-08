@@ -143,4 +143,26 @@ class LangListService
         return $translations;
     }
 
+    private function validatePlaceholders($targetTranslations, $baseTranslations)
+    {
+        foreach ($targetTranslations as $group => $translations) {
+            foreach ($translations as $key => $translation) {
+                if (isset($baseTranslations[$group][$key]) && is_string($baseTranslations[$group][$key])) {
+                    $baseTranslation = $baseTranslations[$group][$key];
+                    $placeholders = $this->matchPlaceholders($baseTranslation);
+                    foreach ($placeholders as $placeholder) {
+                        if (strpos($translation, $placeholder) === false) {
+                            yield compact('group', 'key', 'placeholder', 'translation', 'baseTranslation');
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private function matchPlaceholders($translation)
+    {
+        preg_match_all('~(:[a-zA-Z0-9_]+)~', $translation, $m);
+        return $m[1] ?? [];
+    }
 }

@@ -46,11 +46,13 @@ class ExportToCsvCommand extends Command
      */
     public function handle()
     {
-        foreach ($this->strToArray($this->option('locale')) as $locale) {
-            foreach ($this->strToArray($this->option('target'), [null]) as $target) {
-                $translations = $this->getTranslations($locale, $target);
-                $this->saveTranslations($locale, $target, $translations);
-                $this->info(strtoupper($locale) . strtoupper($target ?: '') . ' Translations saved to: ' . $this->getOutputFileName($locale, $target));
+        $exportLocales = $this->option('locale') ?: config('lang_import_export.export_locale');
+        $targetLocales = $this->option('target') ?: config('lang_import_export.export_target');
+        foreach ($this->strToArray($exportLocales) as $exportLocale) {
+            foreach ($this->strToArray($targetLocales, [null]) as $targetLocale) {
+                $translations = $this->getTranslations($exportLocale, $targetLocale);
+                $this->saveTranslations($exportLocale, $targetLocale, $translations);
+                $this->info(strtoupper($exportLocale) . strtoupper($targetLocale ?: '') . ' Translations saved to: ' . $this->getOutputFileName($exportLocale, $targetLocale));
             }
         }
         if ($zipName = $this->option('zip')) {
@@ -107,6 +109,7 @@ class ExportToCsvCommand extends Command
      * @param $target
      * @param $translations
      * @return void
+     * @throws \Exception
      */
     private function saveTranslations($locale, $target, $translations)
     {
@@ -115,6 +118,10 @@ class ExportToCsvCommand extends Command
         $this->saveTranslationsToFile($output, $translations);
 
         $this->closeFile($output);
+
+        if ($this->option('excel')) {
+            $this->adjustToExcel($this->getOutputFileName($locale, $target));
+        }
     }
 
     /**
@@ -161,12 +168,7 @@ class ExportToCsvCommand extends Command
     /**
      * Put content of file to specified file with CSV parameters.
      *
-     * @param FilePointerResource $output
-     * @param string $group
-     * @param string $key
-     * @param string $value
      * @return void
-     *
      */
     private function writeFile()
     {
@@ -178,16 +180,12 @@ class ExportToCsvCommand extends Command
     /**
      * Close output file and check if adjust file to Excel format.
      *
-     * @param FilePointerResource $output
+     * @param resource $output
      * @return void
      */
     private function closeFile($output)
     {
         fclose($output);
-
-        if ($this->option('excel')) {
-            $this->adjustToExcel();
-        }
     }
 
     /**
@@ -196,11 +194,13 @@ class ExportToCsvCommand extends Command
      * @return void
      *
      */
-    private function adjustToExcel()
+    private function adjustToExcel($fileName)
     {
-        $data = file_get_contents($this->option('output'));
-        file_put_contents($this->option('output'),
-            chr(255) . chr(254) . mb_convert_encoding($data, 'UTF-16LE', 'UTF-8'));
+        $data = file_get_contents($fileName);
+        file_put_contents(
+            $fileName,
+            chr(255) . chr(254) . mb_convert_encoding($data, 'UTF-16LE', 'UTF-8')
+        );
     }
 
     /**
@@ -210,7 +210,7 @@ class ExportToCsvCommand extends Command
      */
     private function getOutputFileName($locale, $target = null)
     {
-        $fileName = $this->option('output');
+        $fileName = $this->option('output') ?: config('lang_import_export.export_path');
         $fileName = str_replace(':locale', $locale, $fileName);
         $fileName = str_replace(':target', $target, $fileName);
         return $fileName;

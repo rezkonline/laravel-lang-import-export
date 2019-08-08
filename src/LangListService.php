@@ -143,7 +143,7 @@ class LangListService
         return $translations;
     }
 
-    private function validatePlaceholders($targetTranslations, $baseTranslations)
+    public function validatePlaceholders($targetTranslations, $baseTranslations)
     {
         foreach ($targetTranslations as $group => $translations) {
             foreach ($translations as $key => $translation) {

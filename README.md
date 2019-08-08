@@ -1,9 +1,11 @@
 ![Laravel-Lang-Import-Export v6](https://raw.githubusercontent.com/AidasK/laravel-lang-import-export/master/logo.png)
 
-Laravel-Lang-Import-Export
+Laravel-Lang-Import-Export Refactored
 ==========================
 
-This package provides artisan commands to import and export language files from and to CSV. This can be used to send translations to agencies that normally work with Excel-like files.
+This package provides artisan commands to import and export language files from and to CSV. This can be used to send translations to agencies that normally work with Excel-like files. In practice, CSV format is supper easy to work with for any translator in Fiverr or for any other freelancer. Personally, I have tried every other format such as *php, yaml, docx, pod, txt* and all of them has too complex syntax and requires custom software to work with (Not to mention all those problems with file encodings). CSV solves it all. 
+
+# How It Works? 
 
 It turns some navigation.php file...
 
@@ -45,8 +47,6 @@ Installation
     composer require aidask/laravel-lang-import-export
 ```
 
-Run `composer update` to install the package.
-
 This package uses Laravel 5.5 Package Auto-Discovery.
 For previous versions of Laravel, you need to update `config/app.php` by adding an entry for the service provider:
 
@@ -66,8 +66,8 @@ The package currently provides two commands, one for exporting the files and one
 
 ```bash
 php artisan lang:export --locale en
-php artisan lang:export --locale en --target fr  # export en translations only missing in fr locale
-php artisan lang:export -z all.zip  # archive all the files
+php artisan lang:export --locale en --target fr,de,pt  # export en translations only missing in fr,de,pt locales. Each in separate files
+php artisan lang:export -l fr,de,pt -z all.zip  # archive all the files
 php artisan lang:export --locale en -g paggination,validation  # export only cretain groups 
 ```
 
@@ -99,6 +99,9 @@ php artisan lang:import
 
 Changelog
 ------------
+
+6.1.0
+* Validate placeholders feature
 
 6.0.0
 * refactor whole repository

@@ -1,9 +1,9 @@
 ![Laravel-Lang-Import-Export v6](https://raw.githubusercontent.com/AidasK/laravel-lang-import-export/master/logo.png)
 
-Laravel-Lang-Import-Export Refactored
+Laravel-Lang-Import-Export **(Refactored)**
 ==========================
 
-This package provides artisan commands to import and export language files from and to CSV. This can be used to send translations to agencies that normally work with Excel-like files. In practice, CSV format is supper easy to work with for any translator in Fiverr or for any other freelancer. Personally, I have tried every other format such as *php, yaml, docx, pod, txt* and all of them has too complex syntax and requires custom software to work with (Not to mention all those problems with file encodings). CSV solves it all. 
+This package provides artisan commands to import and export language files from and to CSV. This can be used to send translations to agencies that normally work with Excel-like files. In practice, CSV format is supper easy to work with for any translator in Fiverr or for any other freelancer. Personally, I have tried every other format such as **php, yaml, docx, pod, txt** and all of them has too complex syntax and requires custom software to work with (Not to mention all those problems with file encodings). CSV solves it all!
 
 # How It Works? 
 
@@ -93,9 +93,6 @@ You can export package config if you want to set defaults for the commands:
 php artisan vendor:publish
 ```
 
-```
-php artisan lang:import
-```
 
 Changelog
 ------------

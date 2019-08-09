@@ -16,10 +16,11 @@ class ImportFromCsvCommand extends Command
      * @var string
      */
     protected $signature = 'lang:import
-    						{input : Filename of file to be imported with translation files.} 
+    						{input : Filename of file to be imported with translation files.}
 							{--l|locale= : The locale to be imported (default - parsed from file name).} 
     						{--g|group= : The name of translation file to imported (default - base group from config).} 
     						{--p|placeholders : Search for missing placeholders in imported keys.} 
+    						{--column-map= : Map columns if other columns are used for notes (e.g. "0,1,3").}
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
     						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} 
     						{--escape=" : Field escape (optional, default - \'"\').}
@@ -91,8 +92,9 @@ class ImportFromCsvCommand extends Command
 
         $translations = [];
         $confirmed = false;
+        $map = explode(',', $this->option('column-map') ?: '0,1,2');
         while (($data = fgetcsv(
-            $input, 0, $this->option('delimiter'), $this->option('enclosure'), $this->option('escape'))
+                $input, 0, $this->option('delimiter'), $this->option('enclosure'), $this->option('escape'))
             ) !== false) {
             if (isset($translations[$data[0]]) == false) {
                 $translations[$data[0]] = [];
@@ -101,10 +103,10 @@ class ImportFromCsvCommand extends Command
             if ($columns < 3) {
                 throw new \Exception("File has only $columns column/s");
             }
-            if ($columns > 3) {
-                throw new \Exception('Canceled by user');
+            if ($columns > 3 && !$this->option('column-map')) {
+                throw new \Exception("File has $columns columns");
             }
-            $translations[$data[0]][$data[1]] = $data[2];
+            $translations[$data[$map[0]]][$data[$map[1]]] = $data[$map[2]];
         }
 
         return $translations;

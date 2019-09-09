@@ -160,6 +160,24 @@ class LangListService
         }
     }
 
+    public function validateHTML($targetTranslations, $baseTranslations)
+    {
+        foreach ($targetTranslations as $group => $translations) {
+            foreach ($translations as $key => $translation) {
+                if (isset($baseTranslations[$group][$key]) && is_string($baseTranslations[$group][$key])) {
+                    $baseTranslation = $baseTranslations[$group][$key];
+                    preg_match_all('~(</?[a-z]+[^>]*?>)~i', $translation, $m);
+                    $tags = $m[1];
+                    foreach ($tags as $tag) {
+                        if (strpos($translation, $tag) === false) {
+                            yield compact('group', 'key', 'translation', 'baseTranslation', 'tag');
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private function matchPlaceholders($translation)
     {
         preg_match_all('~(:[a-zA-Z0-9_]+)~', $translation, $m);

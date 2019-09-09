@@ -19,7 +19,8 @@
     "license": "MIT",
     "require": {
         "php": ">=7.0.0",
-        "illuminate/support": "5.x"
+        "illuminate/support": "5.x",
+        "phpoffice/phpspreadsheet": "dev-master"
     },
     "autoload": {
         "psr-4": {

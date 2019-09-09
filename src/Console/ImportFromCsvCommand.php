@@ -19,12 +19,10 @@ class ImportFromCsvCommand extends Command
     						{input : Filename of file to be imported with translation files.}
 							{--l|locale= : The locale to be imported (default - parsed from file name).} 
     						{--g|group= : The name of translation file to imported (default - base group from config).} 
-    						{--p|placeholders : Search for missing placeholders in imported keys.} 
-    						{--column-map= : Map columns if other columns are used for notes (e.g. "0,1,3").}
-    						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
-    						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} 
-    						{--escape=" : Field escape (optional, default - \'"\').}
-    						{--X|excel : Set file encoding from Excel (optional, default - UTF-8).}';
+    						{--p|placeholders : Search for missing placeholders in imported keys (see config file for default value).} 
+    						{--html : Validate html in imported keys (see config file for default value).} 
+    						{--column-map= : Map columns if other columns are used for notes (e.g. "A,B,D").}
+    						';
 
     /**
      * The console command description.
@@ -49,10 +47,18 @@ class ImportFromCsvCommand extends Command
         $translations = $this->readTranslations($fileName);
         $group = $this->option('group');
         LangListService::writeLangList($locale, $group, $translations);
-        if ($this->option('placeholders')) {
+        if ($this->option('placeholders') || config('lang_import_export.import_validate_placeholders')) {
             $baseTranslations = LangListService::loadLangList(config('lang_import_export.base_locale'), $group);
             foreach (LangListService::validatePlaceholders($translations, $baseTranslations) as $errors) {
-                $this->warn($locale . "/{$errors['group']}.{$errors['key']} is missing \"{$errors['placeholder']}\".");
+                $this->warn("resources/lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['placeholder']}\".");
+                $this->info($errors['translation'], 'v');
+                $this->info($errors['baseTranslation'], 'vv');
+            }
+        }
+        if ($this->option('html') || config('lang_import_export.import_validate_html')) {
+            $baseTranslations = LangListService::loadLangList(config('lang_import_export.base_locale'), $group);
+            foreach (LangListService::validateHTML($translations, $baseTranslations) as $errors) {
+                $this->warn("resources/lang/$locale/{$errors['group']}.php {$errors['key']} is missing `{$errors['tag']}` html tag.");
                 $this->info($errors['translation'], 'v');
                 $this->info($errors['baseTranslation'], 'vv');
             }
@@ -68,38 +74,16 @@ class ImportFromCsvCommand extends Command
      */
     private function readTranslations($fileName)
     {
-        if (($input = fopen($fileName, 'r')) === false) {
-            throw new \Exception('File can not be opened ' . $fileName);
-        }
-        $translations = $this->readFile($input);
-        fclose($input);
-
-        return $translations;
-    }
-
-    /**
-     * Read content of file.
-     *
-     * @param resource $input
-     * @return array
-     * @throws \Exception
-     */
-    private function readFile($input)
-    {
-        if ($this->option('excel')) {
-            $this->adjustFromExcel();
-        }
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($fileName);
+        $rows = $spreadsheet->getActiveSheet()->toArray(null, false, false, true);
 
         $translations = [];
-        $confirmed = false;
-        $map = explode(',', $this->option('column-map') ?: '0,1,2');
-        while (($data = fgetcsv(
-                $input, 0, $this->option('delimiter'), $this->option('enclosure'), $this->option('escape'))
-            ) !== false) {
-            if (isset($translations[$data[0]]) == false) {
-                $translations[$data[0]] = [];
+        $map = explode(',', $this->option('column-map') ?: 'A,B,C');
+        foreach ($rows as $data) {
+            if (isset($translations[$data[$map[0]]]) == false) {
+                $translations[$data[$map[0]]] = [];
             }
-            $columns = sizeof($data);
+            $columns = count($data);
             if ($columns < 3) {
                 throw new \Exception("File has only $columns column/s");
             }
@@ -110,16 +94,5 @@ class ImportFromCsvCommand extends Command
         }
 
         return $translations;
-    }
-
-    /**
-     * Adjust file to Excel format.
-     *
-     * @return void
-     */
-    private function adjustFromExcel()
-    {
-        $data = file_get_contents($this->argument('input'));
-        file_put_contents($this->argument('input'), mb_convert_encoding($data, 'UTF-8', 'UTF-16'));
     }
 }

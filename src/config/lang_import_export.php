@@ -8,4 +8,6 @@ return [
     'export_target' => null,// target locale list separated by comma
     'base_group' => null, // all groups or comma separated list
     'export_path' => storage_path(':locale:target.csv'),
+    'import_validate_placeholders' => false, // validate placeholders by default
+    'import_validate_html' => false, // validate html by default
 ];

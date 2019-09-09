@@ -19,6 +19,7 @@ class ValidationCommand extends Command
                             {target? : Locale to be checked.} 
     						{--l|locale= : Base locale (default - base locale from config).} 
     						{--g|group= : The name of translation file to export (default - base group from config).}
+    						{--html : Compare HTML}
     						{--m|missing : Show missing translations}
     						';
 
@@ -47,6 +48,9 @@ class ValidationCommand extends Command
         foreach ($this->strToArray($target) as $locale) {
             $targetTranslations = LangListService::loadLangList($locale, $groups);
             $this->validatePlaceholders($targetTranslations, $baseTranslations, $locale);
+            if ($this->option('html')) {
+                $this->validateHTML($targetTranslations, $baseTranslations, $locale);
+            }
             if ($this->option('missing')) {
                 $this->showMissing($targetTranslations, $baseTranslations, $locale);
             }
@@ -70,7 +74,22 @@ class ValidationCommand extends Command
     {
         $this->info('Searching for missing placeholers...');
         foreach (LangListService::validatePlaceholders($targetTranslations, $baseTranslations) as $errors) {
-            $this->warn($locale . "/{$errors['group']}.{$errors['key']} is missing \"{$errors['placeholder']}\".");
+            $this->warn("resources/lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['placeholder']}\".");
+            $this->info($errors['translation'], 'v');
+            $this->info($errors['baseTranslation'], 'vv');
+        }
+    }
+
+    /**
+     * @param $targetTranslations
+     * @param $baseTranslations
+     * @param $locale
+     */
+    private function validateHTML($targetTranslations, $baseTranslations, $locale)
+    {
+        $this->info('Searching for HTML differences...');
+        foreach (LangListService::validateHTML($targetTranslations, $baseTranslations) as $errors) {
+            $this->warn("resources/lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['tag']}\" html tag.");
             $this->info($errors['translation'], 'v');
             $this->info($errors['baseTranslation'], 'vv');
         }
@@ -81,12 +100,12 @@ class ValidationCommand extends Command
         $this->info('Searching for missing keys...');
         foreach ($baseTranslations as $group => $translations) {
             if (!isset($targetTranslations[$group])) {
-                $this->warn("$locale/$group entire group is missing");
+                $this->warn("resources/lang/$locale/$group.php entire group is missing");
                 continue;
             }
             foreach ($translations as $key => $translation) {
                 if (!empty($baseTranslations[$group][$key]) && !isset($targetTranslations[$group][$key])) {
-                    $this->warn("$locale/$group.$key is missing");
+                    $this->warn("resources/lang/$locale/$group.php $key is missing");
                 }
             }
         }

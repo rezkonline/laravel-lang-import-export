@@ -3,7 +3,7 @@
 Laravel-Lang-Import-Export **(Refactored)**
 ==========================
 
-This package provides artisan commands to import and export language files from and to CSV. This can be used to send translations to agencies that normally work with Excel-like files. In practice, CSV format is supper easy to work with for any translator in Fiverr or for any other freelancer. Personally, I have tried every other format such as **php, yaml, docx, pod, txt** and all of them has too complex syntax and requires custom software to work with (Not to mention all those problems with file encodings). CSV solves it all!
+This package provides artisan commands to import and export language files from and to CSV. This can be used to send translations to agencies that normally work with Excel-like files. In practice, CSV format is supper easy to work with for any translator in Fiverr or for any other freelancer. Personally, I have tried every other format such as **php, yaml, docx, pod, txt** and all of them has too complex syntax and requires custom software to work with (Not to mention all those problems with file encodings). CSV solves it all! (Now supports **xls, xlsx, ods** file types too!)
 
 # How It Works? 
 
@@ -81,7 +81,7 @@ php artisan lang:import es.csv -p # validate imported translations for missing p
 
 ### Validate
 ```bash
-php artisan lang:validate ar -m -v
+php artisan lang:validate ar -m --html -v
 ```
 ![Laravel-Lang-Import-Export validation example](https://raw.githubusercontent.com/AidasK/laravel-lang-import-export/master/validation.png)
 
@@ -96,6 +96,10 @@ php artisan vendor:publish
 
 Changelog
 ------------
+
+6.2.0
+* Validate HTML feature. Usually HTML tags are translated with random spaces such as "< /b>", which makes entire paragraph bold.
+* Added support to import from xls, ods, xlsx, csv file types (PhpOffice integration)
 
 6.1.0
 * Validate placeholders feature

@@ -166,7 +166,7 @@ class LangListService
             foreach ($translations as $key => $translation) {
                 if (isset($baseTranslations[$group][$key]) && is_string($baseTranslations[$group][$key])) {
                     $baseTranslation = $baseTranslations[$group][$key];
-                    preg_match_all('~(</?[a-z]+[^>]*?>)~i', $translation, $m);
+                    preg_match_all('~(</?[a-z]+[^>]*?>)~i', $baseTranslation, $m);
                     $tags = $m[1];
                     foreach ($tags as $tag) {
                         if (strpos($translation, $tag) === false) {

@@ -68,20 +68,22 @@ The package currently provides two commands, one for exporting the files and one
 php artisan lang:export --locale en
 php artisan lang:export --locale en --target fr,de,pt  # export en translations only missing in fr,de,pt locales. Each in separate files
 php artisan lang:export -l fr,de,pt -z all.zip  # archive all the files
-php artisan lang:export --locale en -g paggination,validation  # export only cretain groups 
+php artisan lang:export --locale en -g pagination,validation  # export only cretain groups 
+php artisan lang:export --locale en --exclude pagination,validation  # export all files except pagination and validation
 ```
 
 ### Import
 ```bash
 php artisan lang:import es.csv # localed autodetected from file name
 php artisan lang:import espaniol.csv -l es
-php artisan lang:import espaniol.csv -l es -g paggination,validation # import only cretain groups
-php artisan lang:import es.csv -p # validate imported translations for missing placeholders (see below)
+php artisan lang:import espaniol.csv -l es -g pagination,validation # import only cretain groups
+php artisan lang:import es.csv -p --html # validate imported translations for missing placeholders and bad html (see below)
+php artisan lang:import es.xls -p --column-map A,B,D # import translations from different column. E.g. C column was left with base language
 ```
 
 ### Validate
 ```bash
-php artisan lang:validate ar -m --html -v
+php artisan lang:validate ar -m --html -v # find missing keys, bad html and placeholders
 ```
 ![Laravel-Lang-Import-Export validation example](https://raw.githubusercontent.com/AidasK/laravel-lang-import-export/master/validation.png)
 

@@ -15,24 +15,27 @@ class LangListService
      *
      * @param string $locale
      * @param string $group
+     * @param string $excludeGroups
      * @return array
      */
-    public function loadLangList($locale, $group)
+    public function loadLangList($locale, $group, $excludeGroups = '')
     {
+        $exclude = explode(',', $excludeGroups);
         $result = [];
         if ($this->isGroupList($group)) {
             $groups = explode(',', $group);
-            foreach ($groups as $group) {
+        } else {
+            $path = resource_path('lang/' . $locale . '/');
+            $files = $this->getAllFiles($path);
+            $groups = [];
+            foreach ($files as $file) {
+                $groups[] = substr($file->getRealPath(), strlen($path), -4);
+            }
+        }
+        foreach ($groups as $group) {
+            if (!in_array($group, $exclude)) {
                 $result[$group] = $this->getGroup($locale, $group);
             }
-            return $result;
-        }
-
-        $path = resource_path('lang/' . $locale . '/');
-        $files = $this->getAllFiles($path);
-        foreach ($files as $file) {
-            $file_path = substr($file->getRealPath(), strlen($path), -4);
-            $result[$file_path] = $this->getGroup($locale, $file_path);
         }
         return $result;
     }

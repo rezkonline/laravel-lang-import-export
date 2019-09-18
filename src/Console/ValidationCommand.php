@@ -18,7 +18,8 @@ class ValidationCommand extends Command
     protected $signature = 'lang:validate 
                             {target? : Locale to be checked.} 
     						{--l|locale= : Base locale (default - base locale from config).} 
-    						{--g|group= : The name of translation file to export (default - base group from config).}
+    						{--g|group= : The names of translation files to validate (default - group from config).}
+    						{--exclude= : The names of translation files to be excluded (default - group from config).}
     						{--html : Compare HTML}
     						{--m|missing : Show missing translations}
     						';
@@ -39,14 +40,15 @@ class ValidationCommand extends Command
     public function handle()
     {
         $baseLocale = $this->option('locale') ?: config('lang_import_export.base_locale');
-        $groups = $this->option('group') ?: config('lang_import_export.base_group');
-        $baseTranslations = LangListService::loadLangList($baseLocale, $groups);
+        $groups = $this->option('group') ?: config('lang_import_export.groups');
+        $exclude = $this->option('exclude') ?: config('lang_import_export.exclude_groups');
+        $baseTranslations = LangListService::loadLangList($baseLocale, $groups, $exclude);
         $target = $this->argument('target');
         if (empty($target)) {
             $this->error('--target is required');
         }
         foreach ($this->strToArray($target) as $locale) {
-            $targetTranslations = LangListService::loadLangList($locale, $groups);
+            $targetTranslations = LangListService::loadLangList($locale, $groups, $exclude);
             $this->validatePlaceholders($targetTranslations, $baseTranslations, $locale);
             if ($this->option('html')) {
                 $this->validateHTML($targetTranslations, $baseTranslations, $locale);

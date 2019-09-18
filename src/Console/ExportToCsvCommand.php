@@ -18,7 +18,8 @@ class ExportToCsvCommand extends Command
     protected $signature = 'lang:export 
     						{--l|locale= : The locales to be exported. Separated by comma (default - base locale from config).} 
     						{--t|target= : Target languages, only missing keys are exported. Separated by comma.} 
-    						{--g|group= : The name of translation file to export (default - base group from config).} 
+    						{--g|group= : The names of translation files to export (default - group from config).} 
+    						{--exclude= : The names of translation files to exclude (default - group from config).} 
     						{--o|output= : Filename of exported translation, :locale, :target is replaced (default - export_path from config).} 
     						{--z|zip= : Zip all files.}
     						{--X|excel : Set file encoding for Excel (optional, default - UTF-8).}
@@ -89,10 +90,11 @@ class ExportToCsvCommand extends Command
      */
     private function getTranslations($locale, $target = null)
     {
-        $group = $this->option('group') ?: config('lang_import_export.base_group');
-        $from = LangListService::loadLangList($locale, $group);
+        $group = $this->option('group') ?: config('lang_import_export.groups');
+        $exclude = $this->option('exclude') ?: config('lang_import_export.exclude_groups');
+        $from = LangListService::loadLangList($locale, $group, $exclude);
         if ($target) {
-            $targetList = LangListService::loadLangList($target, $group);
+            $targetList = LangListService::loadLangList($target, $group, $exclude);
             foreach ($targetList as $group => $translations) {
                 foreach ($translations as $key => $v) {
                     unset($from[$group][$key]);

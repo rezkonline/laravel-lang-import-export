@@ -19,7 +19,7 @@
     "license": "MIT",
     "require": {
         "php": ">=7.0.0",
-        "illuminate/support": ">=5"
+        "illuminate/support": ">=5",
         "phpoffice/phpspreadsheet": "^1.11"
     },
     "autoload": {
@@ -35,7 +35,7 @@
     },
     "extra": {
         "component": "package",
-        "frameworks": ["Laravel 5.7", "Laravel 5.8", "Laravel 6.0"],
+        "frameworks": ["Laravel"],
         "laravel": {
             "providers": [
                 "LangImportExport\\LangImportExportServiceProvider"

@@ -70,6 +70,7 @@ php artisan lang:export --locale en --target fr,de,pt  # export en translations 
 php artisan lang:export -l fr,de,pt -z all.zip  # archive all the files
 php artisan lang:export --locale en -g pagination,validation  # export only cretain groups 
 php artisan lang:export --locale en --exclude pagination,validation  # export all files except pagination and validation
+php artisan lang:export --locale en --ext xls  # supported extensions: Xls, Xlsx, Ods, Csv, Html, Tcpdf, Mpdf, Dompdf
 ```
 
 ### Import
@@ -98,6 +99,9 @@ php artisan vendor:publish
 
 Changelog
 ------------
+6.4.0
+* Added support to export to Xls, Xlsx, Ods, Csv, Html, Tcpdf, Mpdf, Dompdf file types
+* You can now import translations from a zip file
 
 6.2.0
 * Validate HTML feature. Usually HTML tags are translated with random spaces such as "< /b>", which makes entire paragraph bold.

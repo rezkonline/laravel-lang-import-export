@@ -3,6 +3,7 @@
 namespace LangImportExport\Console;
 
 use Illuminate\Console\Command;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use Symfony\Component\Console\Input\InputOption;
@@ -24,8 +25,7 @@ class ExportToCsvCommand extends Command
     						{--exclude= : The names of translation files to exclude (default - group from config).} 
     						{--o|output= : Filename of exported translation, :locale, :target is replaced (default - export_path from config).} 
     						{--z|zip= : Zip all files.}
-    						{--X|excel : Set file encoding for Excel (optional, default - UTF-8).}
-    						{--s|xls : Export files as xls.}
+    						{--e|ext= : Type of files extension (available extensions Xls, Xlsx, Ods, Csv, Html, Tcpdf, Mpdf, Dompdf).}
     						{--D|delimiter=, : Field delimiter (optional, default - ",").} 
     						{--E|enclosure=" : Field enclosure (optional, default - \'"\').} ';
 
@@ -52,17 +52,14 @@ class ExportToCsvCommand extends Command
     {
         $exportLocales = $this->option('locale') ?: config('lang_import_export.export_locale');
         $targetLocales = $this->option('target') ?: config('lang_import_export.export_target');
+        $fileExtensions = $this->option('ext') ?: config('lang_import_export.export_default_extension');
         foreach ($this->strToArray($exportLocales) as $exportLocale) {
             foreach ($this->strToArray($targetLocales, [null]) as $targetLocale) {
                 $translations = $this->getTranslations($exportLocale, $targetLocale);
                 $wordCount = $this->getTranslatableWordCount($translations);
-                if ($this->option('xls')) {
-                    $fileName = str_replace('csv', 'xls', $this->getOutputFileName($exportLocale, $wordCount, $targetLocale));
-                    $this->saveFileToXls($translations, $fileName);
-                    continue;
-                }
-                $this->saveTranslations($exportLocale, $targetLocale, $translations);
-                $this->info(strtoupper($exportLocale) . strtoupper($targetLocale ?: '') . ' Translations saved to: ' . $this->getOutputFileName($exportLocale, $wordCount, $targetLocale));
+                $fileName = $this->getOutputFileName($exportLocale, $wordCount, $fileExtensions, $targetLocale);
+                $this->saveTranslations($translations, $fileName, $fileExtensions);
+                $this->info(strtoupper($exportLocale) . strtoupper($targetLocale ?: '') . ' Translations saved to: ' . $this->getOutputFileName($exportLocale, $wordCount, $fileExtensions, $targetLocale));
             }
         }
         if ($zipName = $this->option('zip')) {
@@ -114,119 +111,17 @@ class ExportToCsvCommand extends Command
     }
 
     /**
-     * Save fetched translations to file.
-     *
-     * @param $locale
-     * @param $target
-     * @param $translations
-     * @return void
-     * @throws \Exception
-     */
-    private function saveTranslations($locale, $target, $translations)
-    {
-        $wordCount = $this->getTranslatableWordCount($translations);
-
-        $output = $this->openFile($locale, $target, $wordCount);
-
-        $this->saveTranslationsToFile($output, $translations);
-
-        $this->closeFile($output);
-
-        if ($this->option('excel')) {
-            $this->adjustToExcel($this->getOutputFileName($locale, $wordCount, $target));
-        }
-    }
-
-    /**
-     * Open specified file (if not possible, open default one).
-     *
-     * @param $locale
-     * @param $target
-     * @throws \Exception
-     * @return resource
-     */
-    private function openFile($locale, $target, $wordCount)
-    {
-        $fileName = $this->getOutputFileName($locale, $wordCount, $target);
-
-        if (!($output = fopen($fileName, 'w'))) {
-            throw new \Exception("$fileName failed to open");
-        }
-        $this->files[] = $fileName;
-
-        fputs($output, "\xEF\xBB\xBF");
-
-        return $output;
-    }
-
-    /**
-     * Save content of translation files to specified file.
-     *
-     * @param resource $output
-     * @param array $translations
-     * @return void
-     */
-    private function saveTranslationsToFile($output, $translations)
-    {
-        foreach ($translations as $group => $files) {
-            foreach ($files as $key => $value) {
-                if (is_array($value)) {
-                    continue;
-                }
-                $this->writeFile($output, $group, $key, $value);
-            }
-        }
-    }
-
-    /**
-     * Put content of file to specified file with CSV parameters.
-     *
-     * @return void
-     */
-    private function writeFile()
-    {
-        $data = func_get_args();
-        $output = array_shift($data);
-        fputcsv($output, $data, $this->option('delimiter'), $this->option('enclosure'));
-    }
-
-    /**
-     * Close output file and check if adjust file to Excel format.
-     *
-     * @param resource $output
-     * @return void
-     */
-    private function closeFile($output)
-    {
-        fclose($output);
-    }
-
-    /**
-     * Adjust file to Excel format.
-     *
-     * @return void
-     *
-     */
-    private function adjustToExcel($fileName)
-    {
-        $data = file_get_contents($fileName);
-        file_put_contents(
-            $fileName,
-            chr(255) . chr(254) . mb_convert_encoding($data, 'UTF-16LE', 'UTF-8')
-        );
-    }
-
-    /**
      * @param $locale
      * @param null $target
      * @return mixed
      */
-    private function getOutputFileName($locale, $wordCount, $target = null)
+    private function getOutputFileName($locale, $wordCount, $fileExtension, $target = null)
     {
         $fileName = $this->option('output') ?: config('lang_import_export.export_path');
         $fileName = str_replace(':locale', $locale, $fileName);
         $fileName = str_replace(':target', $target, $fileName);
         $fileName = str_replace(':wordcount', $wordCount, $fileName);
+        $fileName = str_replace(':ext', $fileExtension, $fileName);
         return $fileName;
     }
 
@@ -250,8 +145,9 @@ class ExportToCsvCommand extends Command
     /**
      * @param $translations
      * @param $fileName
+     * @param $fileExtension
      */
-    private function saveFileToXls($translations, $fileName)
+    private function saveTranslations($translations, $fileName, $fileExtension)
     {
         $data = [];
         foreach ($translations as $group => $files) {
@@ -264,7 +160,7 @@ class ExportToCsvCommand extends Command
         }
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getActiveSheet()->fromArray($data);
-        $writer = new Xls($spreadsheet);
+        $writer = IOFactory::createWriter($spreadsheet, ucfirst(strtolower($fileExtension)));
         $writer->save($fileName);
         $this->files[] = $fileName;
     }

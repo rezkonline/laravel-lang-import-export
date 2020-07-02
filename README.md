@@ -1,4 +1,7 @@
-![Laravel-Lang-Import-Export v6](https://raw.githubusercontent.com/AidasK/laravel-lang-import-export/master/logo.png)
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/AidasK/laravel-lang-import-export/master/logo.png" titile="Laravel-Lang-Import-Export v6" width="400">
+</p>
 
 Laravel-Lang-Import-Export **(Refactored)**
 ==========================

@@ -52,7 +52,7 @@ class ImportFromCsvCommand extends Command
                 if (!$locale) {
                     preg_match('#\((.*?)\)#', pathinfo($fileName, PATHINFO_FILENAME), $localeCode);
                     $locale = $localeCode[1] ?? pathinfo($fileName, PATHINFO_FILENAME);
-                    if (file_exists(resource_path("lang/$locale"))) {
+                    if (file_exists(lang_path($locale))) {
                         $this->info("Detected locale $locale");
                     } else {
                         $this->error("Could not detect locale of $fileName");
@@ -69,7 +69,7 @@ class ImportFromCsvCommand extends Command
                 if ($this->option('placeholders') || config('lang_import_export.import_validate_placeholders')) {
                     $baseTranslations = LangListService::loadLangList(config('lang_import_export.base_locale'), $group);
                     foreach (LangListService::validatePlaceholders($translations, $baseTranslations) as $errors) {
-                        $this->warn("resources/lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['placeholder']}\".");
+                        $this->warn("lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['placeholder']}\".");
                         $this->info($errors['translation'], 'v');
                         $this->info($errors['baseTranslation'], 'vv');
                     }
@@ -77,7 +77,7 @@ class ImportFromCsvCommand extends Command
                 if ($this->option('html') || config('lang_import_export.import_validate_html')) {
                     $baseTranslations = LangListService::loadLangList(config('lang_import_export.base_locale'), $group);
                     foreach (LangListService::validateHTML($translations, $baseTranslations) as $errors) {
-                        $this->warn("resources/lang/$locale/{$errors['group']}.php {$errors['key']} is missing `{$errors['tag']}` html tag.");
+                        $this->warn("lang/$locale/{$errors['group']}.php {$errors['key']} is missing `{$errors['tag']}` html tag.");
                         $this->info($errors['translation'], 'v');
                         $this->info($errors['baseTranslation'], 'vv');
                     }

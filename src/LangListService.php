@@ -26,7 +26,7 @@ class LangListService
         if ($this->isGroupList($group)) {
             $groups = explode(',', $group);
         } else {
-            $path = resource_path('lang/' . $locale . '/');
+            $path = lang_path($locale . '/');
             $files = $this->getAllFiles($path);
             $groups = [];
             foreach ($files as $file) {
@@ -111,7 +111,7 @@ class LangListService
 
         $header = "<?php\n\nreturn ";
 
-        $language_file = resource_path("lang/{$locale}/{$group}.php");
+        $language_file = lang_path("{$locale}/{$group}.php");
 
         if (!file_exists(dirname($language_file))) {
             mkdir(dirname($language_file), 0777, true);

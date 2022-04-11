@@ -76,7 +76,7 @@ class ValidationCommand extends Command
     {
         $this->info('Searching for missing placeholers...');
         foreach (LangListService::validatePlaceholders($targetTranslations, $baseTranslations) as $errors) {
-            $this->warn("resources/lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['placeholder']}\".");
+            $this->warn("lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['placeholder']}\".");
             $this->info($errors['translation'], 'v');
             $this->info($errors['baseTranslation'], 'vv');
         }
@@ -91,7 +91,7 @@ class ValidationCommand extends Command
     {
         $this->info('Searching for HTML differences...');
         foreach (LangListService::validateHTML($targetTranslations, $baseTranslations) as $errors) {
-            $this->warn("resources/lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['tag']}\" html tag.");
+            $this->warn("lang/$locale/{$errors['group']}.php {$errors['key']} is missing \"{$errors['tag']}\" html tag.");
             $this->info($errors['translation'], 'v');
             $this->info($errors['baseTranslation'], 'vv');
         }
@@ -102,12 +102,12 @@ class ValidationCommand extends Command
         $this->info('Searching for missing keys...');
         foreach ($baseTranslations as $group => $translations) {
             if (!isset($targetTranslations[$group])) {
-                $this->warn("resources/lang/$locale/$group.php entire group is missing");
+                $this->warn("lang/$locale/$group.php entire group is missing");
                 continue;
             }
             foreach ($translations as $key => $translation) {
                 if (!empty($baseTranslations[$group][$key]) && !isset($targetTranslations[$group][$key])) {
-                    $this->warn("resources/lang/$locale/$group.php $key is missing");
+                    $this->warn("lang/$locale/$group.php $key is missing");
                 }
             }
         }

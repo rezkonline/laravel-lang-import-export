@@ -20,13 +20,12 @@ class LangImportExportServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/config/lang_import_export.php' => config_path('lang_import_export.php'),
         ]);
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                ImportFromCsvCommand::class,
-                ExportToCsvCommand::class,
-                ValidationCommand::class,
-            ]);
-        }
+ 
+        $this->commands([
+            ImportFromCsvCommand::class,
+            ExportToCsvCommand::class,
+            ValidationCommand::class,
+        ]);
     }
 
     /**

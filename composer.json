@@ -1,5 +1,5 @@
 {
-    "name": "aidask/laravel-lang-import-export",
+    "name": "rezkonline/laravel-lang-import-export",
     "description": "A Laravel package providing artisan commands to import and export language files from and to CSV.",
     "keywords": ["laravel", "localization", "translation", "messages", "import", "export", "CSV"],
     "authors": [
@@ -14,6 +14,10 @@
         {
             "name": "HighSolutions",
             "email": "adam@highsolutions.pl"
+        },
+        {
+            "name": "Rezkonline",
+            "email": "support@rezkonline.com"
         }
     ],
     "license": "MIT",
